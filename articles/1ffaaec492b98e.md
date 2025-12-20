@@ -1,5 +1,5 @@
 ---
-title: "Swing 宣言的UI化計画！②"
+title: "Swing 宣言的UI化計画②"
 emoji: "️🚀️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [ "Java", "Swing", "GUI", "宣言的UI", "実験" ]
