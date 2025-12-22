@@ -102,3 +102,7 @@ https://github.com/spacehijackle/SwingUI_02/blob/main/app/src/main/java/com/swin
 
 ## さいごに
 今回は地味だけど重要である余白を確保する仕組みについてご紹介しました。これでコンポーネントの配置はだいたい希望通りになると思います。次回はどうしようかな… ボタンかテキストになるかな、と考えています。より宣言的UIらしくなっていく予定なので、お楽しみに👋🏻
+
+
+## 次回記事
+https://zenn.dev/spacehijackle/articles/e28aa04ebcf390
