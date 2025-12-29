@@ -3,7 +3,7 @@ title: "Swing 宣言的UI化計画④ ～名前付き引数に挑戦！～"
 emoji: "🚀️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [ "Java", "Swing", "GUI", "宣言的UI", "実験" ]
-published: false
+published: true
 ---
 
 ## どうしても名前付き引数が欲しい！
@@ -16,20 +16,20 @@ published: false
 これまで上下左右に同じパディングしか与えない`Widget#padding(int)`のみの定義だったのは、どうしても面倒が先に立って、それを乗り越える気力が湧かなかったのが原因でした。とにかく面倒なんです。何が面倒かと言うと…
 
 ところで似たモノとして、コンポーネント周りの余白ではなく、コンポーネント間の余白を確保する`Spacer`がありました。
-この`Spacer`に余白領域をサイズ指定するには固定値の幅と高さ、もしくは幅いっぱい/高さいっぱい、という可能な限り最大化する指定方法がありました。基本的にこのパターンなのですが、実際にメソッドとして対応するには…
+この`Spacer`に余白領域をサイズ指定するには固定値の幅と高さ、もしくは幅いっぱい/高さいっぱい、という可能な限り最大化する指定方法がありました。基本的にこれらのパターンなのですが、実際にメソッドとして対応するには…
 
 ```Java
 1. Spacer.of(int width, int height);    // 幅・高さで指定
-2. Spacer.widthOnly(int width);         // 幅だけ指定
-3. Spacer.widthOnly(UISize width);      // 幅だけ領域いっぱい指定
-4. Spacer.heightOnly(int height);       // 高さだけ指定
-5. Spacer.heightOnly(UISize height);    // 高さだけ領域いっぱい指定
-6. Spacer.fill();                       // 幅・高さを領域いっぱい指定
-7. Spacer.of(UISize width, int height)  // 幅が領域いっぱい、高さは固定値で指定
-8. Spacer.of(int width, UISize height)  // 幅は固定値で、高さが領域いっぱい指定
+2. Spacer.of(UISize width, int height)  // 幅が領域いっぱい、高さは固定値で指定
+3. Spacer.of(int width, UISize height)  // 幅は固定値で、高さが領域いっぱい指定
+4. Spacer.widthOnly(int width);         // 幅だけ指定
+5. Spacer.widthOnly(UISize width);      // 幅だけ領域いっぱい指定
+6. Spacer.heightOnly(int height);       // 高さだけ指定
+7. Spacer.heightOnly(UISize height);    // 高さだけ領域いっぱい指定
+8. Spacer.fill();                       // 幅・高さを領域いっぱい指定
 ```
 
-これだけの公開メソッドがありました。特に`widthOnly`,`heightOnly`ですね。幅のみの指定とか、高さのみの指定、というメソッドが必要となり、これがメソッドを増やしてしまう原因なのです。たとえ幅だけの指定であっても`of()`で済ませたいんですよね。`Spacer.of(width: 10)`みたいな感じで。でも`Java`には名前付き引数の機能がない（加えて引数の初期値指定ができない）ので困って苦し紛れに幅のみのメソッドとか作っちゃうんです。でもこれが上下左右のパディングなんてなったら大変なのは火を見るよりも明らか… これが上下左右のパディング指定を実現させることを遠ざけてた原因なんです。しかし、これはいつまでも引き延ばせないんです。だから今回、やりますよ！
+これだけの公開メソッドがありました。特に`widthOnly`,`heightOnly`ですね。幅のみの指定とか、高さのみの指定、というメソッドが必要となり、これがメソッドを増やしてしまう原因なのです。たとえ幅だけの指定であっても`of()`で済ませたいんですよね。`Spacer.of(width: 10)`みたいな感じで。でも`Java`には名前付き引数の機能がない（加えて引数の初期値指定ができない）ので困って苦し紛れに幅のみのメソッドとか作っちゃうんです。でもこれが上下左右のパディングなんてなったら大変なのは火を見るよりも明らか… これが上下左右別々のパディング指定を実現させることを遠ざけてた原因なんです。しかし、これはいつまでも引き延ばせないんです。だから今回、やりますよ！
 
 今回の目標は、**名前付き引数のように、見た目でどの箇所の余白を指定しているかが分かり、指定されなかった箇所はデフォルト値が適用される**です。
 
@@ -44,11 +44,11 @@ Button.of("おーい、ボタンですよ！")
 
 
 ## 完ぺきではなくとも、割り切りましょう🤗
-さて上記を実現するには、まず引数にいくつ指定されるか不明なので、可変引数で対応することにします。ただ可変引数は型が同じでないといけません。そのため、それぞれのクラスは`Gap`という親クラスを持たせ、その型で共通化することにします。
+さて上記を実現するには、まず引数がいくつ指定されるか不明なので、可変長引数で対応することにします。ただ可変長引数は型が同じでないといけません。そのため、それぞれのクラスには`Gap`という親クラスを持たせ、その型で共通化することにします。
 
 https://github.com/spacehijackle/SwingUI_04/blob/main/app/src/main/java/com/swingui/value/gap/Gap.java
 
-`Gap`クラスは余白のギャップ（間隔）を保持するだけのクラスです。これに`Top`,`Bottom`,`Left`,`Right`のそれぞれのクラスが継承することで、`Gap`として可変引数の指定を可能にします。
+`Gap`クラスは余白のギャップ（間隔）を保持するだけのクラスです。これに`Top`,`Bottom`,`Left`,`Right`のそれぞれのクラスが継承することで、`Gap`型として可変長引数の指定を可能にします。
 
 ```Java:Widget.java
 public interface Widget<T extends JComponent>
@@ -80,7 +80,7 @@ public class ButtonWT extends JButton implements Widget<ButtonWT>
     //// ---------- 後略 ---------- ////
 ```
 
-実装内容はコンポーネント共通なので、ヘルパークラスに投げます。
+実装内容はコンポーネント共通なので、ヘルパークラスにお願いします。
 
 ```Java:WidgetHelper.java
 public class WidgetHelper
@@ -177,7 +177,7 @@ public class AllSidesGap
     //// ---------- 後略 ---------- ////
 ```
 
-`AllSidesGap.of(Gap...)`を見てください。まず、上下左右のデフォルト値を設定し、可変引数で指定された箇所のみ上書きします。これで上下左右のパディング値を決定することができました。簡単でしょ？面倒だけど…
+`AllSidesGap.of(Gap...)`を見てください。まず、上下左右のデフォルト値を設定し、可変長引数で指定された箇所のみ上書きします。これで上下左右のパディング値を決定することができました。簡単でしょ？面倒だけど…
 
 現状の実装の問題点としては、同じ個所のパディング値を複数指定してもエラーが発生しないこと。やったとしても何事もなかったかのように後勝ちです。まぁ、良いのではないでしょうか。大目に見ましょう😅
 
@@ -222,7 +222,7 @@ public interface Widget<T extends JComponent>
     //// ---------- 後略 ---------- ////
 ```
 
-`AllSidesGap`には`Symmetry`用のメソッドも用意します。
+`AllSidesGap`には`Symmetry`用のメソッドも用意します。しかし、こちらは既に定義済みの`Widget#padding(Gap...)`を使ってのデフォルト実装です。`AllSidesGap.of(Symmetry...)`を追加して終わりです。
 
 ```Java:AllSidesGap.java
     /**
@@ -313,7 +313,7 @@ public interface Widget<T extends JComponent>
 
 https://github.com/spacehijackle/SwingUI_04/blob/main/app/src/main/java/com/swingui/value/UISize.java
 
-子クラスに`Width`,`Height`を作り、これを`Spacer.of()`の引数とします。
+子クラスに`Width`,`Height`を作り、これを`Spacer.of()`の引数とします。ちなみに最大限を表す定数`Infinite`を`Width`と`Height`のそれぞれに定義し、これまでの列挙型`UISize.Infinite`は`UISize.Width.Infinite`,`UISize.Height.Infinite`の定数として生まれ変わるのです。
 
 ```Java:Spacer.java
 public class Spacer
@@ -350,3 +350,135 @@ public class Spacer
 
     //// ---------- 後略 ---------- ////
 ```
+
+もうひとつ、`UISize`を使って`Widget#frame(int, int)`を`Widget#frame(UISize...)`に書き換えです。
+
+```Java:Widget.java
+public interface Widget<T extends JComponent>
+{
+    //// ---------- 中略 ---------- ////
+
+    /**
+     * 自身のサイズの設定をする。
+     * 
+     * @param sizes 幅・高さサイズ
+     * @return 自身のインスタンス
+     */
+    T frame(UISize... sizes);
+
+    //// ---------- 後略 ---------- ////
+```
+
+`Widget`を実装している`SwingUI`用コンポーネントが対象です。先にもあったよう、ヘルパークラスにお願いです。
+
+```Java:ButtonWT
+public class ButtonWT extends JButton implements Widget<ButtonWT>
+{
+    //// ---------- 中略 ---------- ////
+
+    @Override
+    public ButtonWT frame(UISize... sizes)
+    {
+        return WidgetHelper.frame(this, sizes);
+    }
+
+    //// ---------- 後略 ---------- ////
+```
+
+```Java:WidgetHelper.java
+public class WidgetHelper
+{
+    //// ---------- 中略 ---------- ////
+
+    /**
+     * 指定コンポーネントのサイズの設定をする。
+     * 
+     * @param <T> JComponentの継承クラス
+     * @param target 対象コンポーネント
+     * @param sizes 幅・高さサイズ
+     * @return 対象コンポーネント
+     */
+    public static <T extends JComponent> T frame(T target, UISize... sizes)
+    {
+        // 幅・高さ決定
+        Width  width = Width.of(target.getPreferredSize().width);
+        Height height = Height.of(target.getPreferredSize().height);
+        for(UISize size : sizes)
+        {
+            if(size instanceof Width)  width = (Width)size;
+            if(size instanceof Height) height = (Height)size;
+        }
+
+        // サイズ設定
+        target.setMaximumSize(new Dimension(width.length, height.length));
+        target.setMinimumSize(new Dimension(width.length, height.length));
+        target.setPreferredSize(new Dimension(width.length, height.length));
+        return target;
+    }
+}
+```
+
+こちらの場合、デフォルト値はそのコンポーネントの"適切な"サイズとなります。これは`JComponent#getPreferredSize()`で取得できます。
+
+それでは、呼び出して確認です。
+
+![](/images/articles/baf0e434b9ead8/frame_sample01.jpg =350x)
+*`Spacer`,`Widget#frame(UISize...)`の確認*
+
+```Java:Startup.java
+    /**
+     * {@link Spacer} / {@link Widget#frame(UISize...)} のパターンをテストする。
+     */
+    private void testUISizePatterns()
+    {
+        Frame.of
+        (
+            "SwingUI Spacer Sample",
+
+            (f) ->
+            {
+                f.setResizable(true);  // 画面リサイズ可能
+                f.setSize(400, 300);  // 初期画面サイズ指定
+            },
+
+            VStack.of
+            (
+                Spacer.of(Height.Infinite),
+
+                text("── Width / Height Only ──"),
+
+                HStack.of
+                (
+                    Button.of("Width: 100")
+                        .frame(Width.of(100)),
+
+                    Spacer.of(Width.of(30)),
+
+                    Button.of("Height: 40")
+                        .frame(Height.of(40))
+                ),
+
+                Spacer.of(Height.Infinite),
+
+                text("── Fixed & Infinite ──"),
+
+                Button.of("Width: Infinite, Height: Fixed")
+                    .frame(Width.Infinite, Height.of(60))
+            )
+            .padding(UIDefaults.COMPONENT_GAP)
+        );
+    }
+```
+
+`Spacer`が`Width`のみ、`Height`のみでも`Spacer.of()`で対応できていますね。
+
+ところで一番下のボタンですが、その上の`Spacer`が高さが最大限取っているため、ウィンドウの高さを伸長してもウィンドウの下部に引っ付いています。また、ボタン自身の幅を最大限に設定しているため、ウィンドウの横幅を伸ばしても、その幅に合わせてボタンも伸びます。これでOKですね。
+
+![](/images/articles/baf0e434b9ead8/frame_sample02.jpg =450x)
+*ウィンドウを大きくした時の`Spacer`,`Widget#frame(UISize...)`の確認*
+
+
+## さいごに
+今回は長らく後回しにしてきた問題に立ち向かいました。とりあえず当初の目標は達成ですが、実際のところ、やっぱり欲しい**名前付き引数機能**です。導入したところで問題あるんですかね？過去のバージョンは'名前なし'として新しいJREで対応できるでしょ？ま、`SwingUI`は`Java8`以上のサポートを想定しているので関係はないですけどね…
+
+今回のソース一式は[こちら](https://github.com/spacehijackle/SwingUI_04/tree/main)
