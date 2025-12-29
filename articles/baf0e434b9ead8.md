@@ -1,5 +1,5 @@
 ---
-title: "Swing 宣言的UI化計画④ ～名前付き引数に挑戦！～"
+title: "Swing 宣言的UI化計画④ ～Javaなのに名前付き引数に挑戦！～"
 emoji: "🚀️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [ "Java", "Swing", "GUI", "宣言的UI", "実験" ]
