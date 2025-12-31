@@ -307,13 +307,53 @@ public interface Widget<T extends JComponent>
 ## 勢いで他も変えちゃう！
 もうこうなったら勢いですからね。同じ問題を持つ`Spacer`も`Widget#frame(int, int)`もやっちゃいましょう。
 
+:::message
+以下の説明はクラス名等の見直しにより、書き直しました。
+既に書き直し前の説明を読んでしまった方は、記事の最後にある`追記(2026.01.01)`をご覧ください。
+:::
+
 `Spacer`は`widthOnly(int)`とか`hightOnly(int)`なんて言う、幅or高さのみを指定するのに専用メソッドを作っていたのが問題でした。なので、これを`Spacer.of()`に一本化します（`Spacer.fill()`除く）。
 
-これまで列挙型として最大限の幅（もしくは高さ）を表していた`UISize`という型がありましたが、これを前出の`Gap`のような役割のクラスに変更です。
+これまで列挙型として最大限の幅（もしくは高さ）を表していた`UISize`という型がありましたが、これを廃止し、前出の`Gap`のような役割のクラス`UILength`を追加します。
 
-https://github.com/spacehijackle/SwingUI_04/blob/main/app/src/main/java/com/swingui/value/UISize.java
+https://github.com/spacehijackle/SwingUI_04/blob/main/app/src/main/java/com/swingui/value/size/UILength.java
 
-子クラスに`Width`,`Height`を作り、これを`Spacer.of()`の引数とします。ちなみに最大限を表す定数`Infinite`を`Width`と`Height`のそれぞれに定義し、これまでの列挙型`UISize.Infinite`は`UISize.Width.Infinite`,`UISize.Height.Infinite`の定数として生まれ変わるのです。
+子クラスに`Width`,`Height`を作り、これを`Spacer.of()`の引数とします。ちなみに最大限を表す定数`Infinite`を`Width`と`Height`のそれぞれに定義し、これまでの列挙型`UISize.Infinite`は`UISize.Width.Infinite`,`UISize.Height.Infinite`の定数に変更です。
+
+次に先に出てきた`AllSidesGap`のように、幅・高さを保持するクラス`WxHSize`を作成します。ちなみに`WxH`は、よく製品のサイズ表記で使われてるアレをマネています。
+
+https://github.com/spacehijackle/SwingUI_04/blob/main/app/src/main/java/com/swingui/value/size/WxHSize.java
+
+`WxHSize#of()`ですが、先のパディングの例`AllSidesGap`ではデフォルト値を自クラスのメソッドで生成できてたので良かったのですが、`WxHSize`に関しては、これから対応しようとしている`Spacer`と`Widget#frame()`のデフォルト値が異なるため、これらデフォルト値を外部から渡す仕様になっています。
+
+```Java:HxWSize.java
+public class WxHSize
+{
+    //// ---------- 中略 ---------- ////
+
+    /**
+     * デフォルト値と指定されたサイズで {@code WxHSize} を生成する。
+     *
+     * @param defaults 幅・高さのデフォルト値
+     * @param lengths 指定されたサイズ
+     * @return {@code WxHSize}
+     */
+    public static WxHSize of(WxHSize defaults, UILength... lengths)
+    {
+        Width  width  = defaults.width;
+        Height height = defaults.height;
+        for(UILength length : lengths)
+        {
+            if(length instanceof Width)  width  = (Width)length;
+            if(length instanceof Height) height = (Height)length;
+        }
+
+        return new WxHSize(width, height);
+    }
+}
+```
+
+それでは`Spacer`に適用してみます。
 
 ```Java:Spacer.java
 public class Spacer
@@ -321,37 +361,33 @@ public class Spacer
     /**
      * 指定した幅・高さのスペース領域を確保する。
      * 
-     * @param sizes 幅・高さのサイズ
+     * @param lengths 幅・高さのサイズ
      * @return {@code PanelWT}
      */
-    public static PanelWT of(UISize... sizes)
+    public static PanelWT of(UILength... lengths)
     {
-        // 幅・高さスペースの決定
-        Width  width  = Width.of(0);
-        Height height = Height.of(0);
-        for(UISize size : sizes)
-        {
-            if(size instanceof Width)  width =  (Width)size;
-            if(size instanceof Height) height = (Height)size;
-        }
+        // 幅・高さスペースの取得
+        WxHSize size = WxHSize.of(WxHSize.zero(), lengths);
 
         // 幅・高さスペースの設定
-        if(isInfinite(width) || isInfinite(height))
+        if(isInfinite(size.width) || isInfinite(size.height))
         {
             // 幅または高さが最大限の場合、柔軟なスペース領域を確保
-            return flexible(new Dimension(width.length, height.length));
+            return flexible(new Dimension(size.width.length, size.height.length));
         }
         else
         {
             // 幅・高さに最大限の値を含まない場合、固定のスペース領域を確保
-            return fixed(new Dimension(width.length, height.length));
+            return fixed(new Dimension(size.width.length, size.height.length));
         }
     }
 
     //// ---------- 後略 ---------- ////
 ```
 
-もうひとつ、`UISize`を使って`Widget#frame(int, int)`を`Widget#frame(UISize...)`に書き換えです。
+`Spacer`の場合、デフォルト値は幅・高さ共にゼロなので、`SxHSize#zero()`を使ってデフォルト値を与えています。これにより、`WxHSize.of()`は最初に幅・高さのデフォルト値を確保し、第２引数以降で指定された`Width`/`Height`の値が、必要に応じてそのデフォルト値を上書きしている、というパディングの時と同じ流れになります。
+
+それではもうひとつ、`UILength`を使って`Widget#frame(int, int)`を`Widget#frame(UILength...)`に書き換えです。
 
 ```Java:Widget.java
 public interface Widget<T extends JComponent>
@@ -361,15 +397,15 @@ public interface Widget<T extends JComponent>
     /**
      * 自身のサイズの設定をする。
      * 
-     * @param sizes 幅・高さサイズ
+     * @param lengths 幅・高さサイズ
      * @return 自身のインスタンス
      */
-    T frame(UISize... sizes);
+    T frame(UILength... lengths);
 
     //// ---------- 後略 ---------- ////
 ```
 
-`Widget`を実装している`SwingUI`用コンポーネントが対象です。先にもあったよう、ヘルパークラスにお願いです。
+このインターフェースの実装は`Widget`を実装している`SwingUI`用コンポーネントが対象です。先にもあったよう、ヘルパークラスにお願いです（ここでは`ButtonWT`を例に説明）。
 
 ```Java:ButtonWT
 public class ButtonWT extends JButton implements Widget<ButtonWT>
@@ -377,9 +413,9 @@ public class ButtonWT extends JButton implements Widget<ButtonWT>
     //// ---------- 中略 ---------- ////
 
     @Override
-    public ButtonWT frame(UISize... sizes)
+    public ButtonWT frame(UILength... lengths)
     {
-        return WidgetHelper.frame(this, sizes);
+        return WidgetHelper.frame(this, lengths);
     }
 
     //// ---------- 後略 ---------- ////
@@ -395,32 +431,27 @@ public class WidgetHelper
      * 
      * @param <T> JComponentの継承クラス
      * @param target 対象コンポーネント
-     * @param sizes 幅・高さサイズ
+     * @param lengths 幅・高さサイズ
      * @return 対象コンポーネント
      */
-    public static <T extends JComponent> T frame(T target, UISize... sizes)
+    public static <T extends JComponent> T frame(T target, UILength... lengths)
     {
         // 幅・高さ決定
-        Width  width = Width.of(target.getPreferredSize().width);
-        Height height = Height.of(target.getPreferredSize().height);
-        for(UISize size : sizes)
-        {
-            if(size instanceof Width)  width = (Width)size;
-            if(size instanceof Height) height = (Height)size;
-        }
+        WxHSize defaults = WxHSize.from(target.getPreferredSize());
+        WxHSize size = WxHSize.of(defaults, lengths);
 
         // サイズ設定
-        target.setMaximumSize(new Dimension(width.length, height.length));
-        target.setMinimumSize(new Dimension(width.length, height.length));
-        target.setPreferredSize(new Dimension(width.length, height.length));
+        target.setMaximumSize(new Dimension(size.width.length, size.height.length));
+        target.setMinimumSize(new Dimension(size.width.length, size.height.length));
+        target.setPreferredSize(new Dimension(size.width.length, size.height.length));
         return target;
     }
 }
 ```
 
-こちらの場合、デフォルト値はそのコンポーネントの"適切な"サイズとなります。これは`JComponent#getPreferredSize()`で取得できます。
+こちらの場合、デフォルト値はその対象コンポーネントの"適切な"サイズです。`Swing`の各コンポーネントは、それぞれの適切なサイズを持っていて、例えばボタンの場合、設定されるボタンの文字列のフォントサイズに応じて算出されます。で、この適切なサイズは`JComponent#getPreferredSize()`（返り値は`Dimension`）で取得できるので、`WxHSize#from(Dimension)`を使ってデフォルト値を生成します。ちなみに`Dimension`は`Swing`で使われる、幅と高さを保持するクラスです。これでデフォルト値に対し、指定された`Width`/`Height`で上書きする、というこれまでの流れと同じになりますね。
 
-それでは、呼び出して確認です。
+それでは、`Spacer`と`Widget#frame(UILength...)`を実際に呼び出して確認です。
 
 ![](/images/articles/baf0e434b9ead8/frame_sample01.jpg =350x)
 *`Spacer`,`Widget#frame(UISize...)`の確認*
@@ -482,3 +513,13 @@ public class WidgetHelper
 今回は長らく後回しにしてきた問題に立ち向かいました。とりあえず当初の目標は達成ですが、実際のところ、やっぱり欲しい**名前付き引数機能**です。導入したところで問題あるんですかね？過去のバージョンは'名前なし'として新しいJREで対応できるでしょ？ま、`SwingUI`は`Java8`以上のサポートを想定しているので関係はないですけどね…
 
 今回のソース一式は[こちら](https://github.com/spacehijackle/SwingUI_04/tree/main)
+
+
+## 追記 (2026.01.01)
+全く元日早々、修正なんてしたくなかったんですが、こればっかりは仕方ありません。
+
+まず、幅と高さを保持する`UISize`を`UILength`にクラス名を変えました。これは`Size`と名付けると、普通、幅と高さの２つの属性を持つクラスを想像するだろう、と考えた結果です。実のところ、属性としては長さだけなんで違和感があったんですね。
+
+それから`WxHSize`を追加しました。当初、`Spacer`や`Widget#frame()`はデフォルト値が違うし、`AllSidesGap`のようなクラスは作らず、それぞれの呼び出し側がデフォルト値とその上書き処理をやればイイじゃん、と思ってたんですが、冷静に考えると、それは違うな… と。つまりデフォルト値に対し、上書くロジックが分散するじゃないか…、と。
+
+Don't Repeat Yourself...
