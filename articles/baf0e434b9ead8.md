@@ -523,3 +523,7 @@ public class WidgetHelper
 それから`WxHSize`を追加しました。当初、`Spacer`や`Widget#frame()`はデフォルト値が違うし、`AllSidesGap`のようなクラスは作らず、それぞれの呼び出し側がデフォルト値とその上書き処理をやればイイじゃん、と思ってたんですが、冷静に考えると、それは違うな… と。つまりデフォルト値に対し、上書くロジックが分散するじゃないか…、と。
 
 Don't Repeat Yourself...
+
+
+## 次回記事
+https://zenn.dev/spacehijackle/articles/9b334991d26717
