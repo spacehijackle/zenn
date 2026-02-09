@@ -35,8 +35,6 @@ published: true
 
 そうなると、以前の記事にあったよう、「どうしても名前付き引数が欲しい（デフォルト引数が欲しい）」となり、その時のやり方が使えそうです。
 
-https://zenn.dev/spacehijackle/articles/baf0e434b9ead8
-
 ```Java
     // 幅: 80, 高さ: 40
     Button.of("Width & Height")
@@ -46,6 +44,8 @@ https://zenn.dev/spacehijackle/articles/baf0e434b9ead8
     Button.of("Width Only")
         .frame(Width.of(80))
 ```
+
+https://zenn.dev/spacehijackle/articles/baf0e434b9ead8
 
 では、あの時、どんな仕組みで実現していたか、というと…
 
