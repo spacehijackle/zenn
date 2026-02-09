@@ -3,7 +3,7 @@ title: "Swing 宣言的UI化計画⑥ ～'再びの'Javaなのに名前付き引
 emoji: "🚀️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [ "Java", "Swing", "GUI", "宣言的UI", "実験" ]
-published: false
+published: true
 ---
 
 ## 気づいちゃいました…🫣
