@@ -1,5 +1,5 @@
 ---
-title: "Swing 宣言的UI化計画⑦ ～アンケートに欠かせないアレの巻～"
+title: "Swing 宣言的UI化計画⑦ ～アンケートに欠かせないアレの巻①～"
 emoji: "🚀️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [ "Java", "Swing", "GUI", "宣言的UI", "実験" ]
@@ -12,11 +12,11 @@ published: false
 
 `GUI`としての選択と言えば、チェック・ボックス、ラジオ・ボタン、リストですかね。今回はアンケートに欠かせないこれら選択の部品の内、チェック・ボックスとラジオ・ボタンを宣言的UI化してみます。
 
-まず、チェック・ボックスですが、これはそれほど難しくはありません。`JCheckBox`を拡張した`Widget`インターフェース実装の`CheckBoxWT`を作成し、その`CheckBoxWT`を呼び出す`CheckBox`を作成すれば良いのです。
+まず、チェック・ボックスですが、これはこれまで解説してきた`SwingUI`の仕組みを知っていれば難しくはありません。`JCheckBox`を拡張した`Widget`インターフェース実装の`CheckBoxWT`を作成し、その`CheckBoxWT`を呼び出す`CheckBox`を作成すれば良いのです。
 
 https://github.com/spacehijackle/SwingUI_07/blob/main/app/src/main/java/com/swingui/widget/choice/CheckBoxWT.java
 
-重要な箇所を抽出して解説します。
+まず`CheckBoxWT`です。重要な箇所を抽出して解説します。
 
 ```Java:CheckBoxWT.java
 public class CheckBoxWT<T> extends JCheckBox implements Widget<CheckBoxWT<T>>
@@ -53,11 +53,11 @@ public class CheckBoxWT<T> extends JCheckBox implements Widget<CheckBoxWT<T>>
 }
 ```
 
-２つ目のコンストラクタを見てください。第一引数は`UIValue<Boolean>`であり、これはチェックON/OFF状態を表す変数です。`UIValue`を介しているため、例えばロジック側でこの変数に対し、true/falseを設定することで、それに同期してチェック・ボックスの選択状態も変化します。これは後ほどサンプル・プログラムで確認します。
+２つ目のコンストラクタを見てください。第一引数は`UIValue<Boolean>`であり、これはチェックON/OFF状態を表す変数です。`UIValue`を介しているため、例えばロジック側でこの変数に対し、true/falseを設定することで、それに同期してチェック・ボックスの選択状態も変化します（`addValueChangeListener()`に設定された処理により、再描画処理が実行）。これは後ほどサンプル・プログラムで確認します。
 
-第二引数は`UIValue<T>`であり、チェック・ボックス横の文字列を表しています。基本的には固定値でしょうが、これを動的に変化させる可能性も考慮し、このような型にしました。こちらも後ほどサンプル・プログラムで確認します。
+第二引数は`UIValue<T>`であり、チェック・ボックスに紐づける任意の値が当てはまります。例えば、ギターの種類に関するチェック・ボックスの場合、ギターの種類を表すオブジェクトが該当します。基本的には固定値でしょうが、これを動的に変化させる可能性も考慮し、`UIValue`を介すことにしました。こちらも後ほどサンプル・プログラムで確認します。
 
-第三引数ですが、これは第二引数で指定された任意型を基にチェック横の文字列が設定できるようにしてあります。`Funciton`は`Consumer`等の仲間である関数型インターフェースで、ここでは指定した任意型を引数とし、その結果を返り値として受けます。この返り値の実装は呼び出し元で行います。
+第三引数ですが、これは第二引数で指定された任意型を基にチェック横の文字列が設定できるようにしてあります。`Funciton`は`Consumer`等の仲間である標準で用意されている関数型インターフェースで、ここでは指定した任意型を引数とし、その結果を返り値として受けます。この返り値の実装は呼び出し元で行います。
 
 ```Java
     CheckBox.of(isChecked, item, (t) -> "label: " + t.toString())
@@ -67,8 +67,7 @@ public class CheckBoxWT<T> extends JCheckBox implements Widget<CheckBoxWT<T>>
 
 ちなみに１つ目のコンストラクタでは、この文字列指定が省略され、`item`の`toString()`がデフォルトの実装となっています。
 
-ところで、`Function`を使わず、直接文字列を指定したらエエやん。と思われる方もいるでしょう。私も若干そう思います。ただ、このチェック横の文字列は指定された任意型に紐づいているだろう、という前提に立てば、その任意型の値を基に文字列を指定するよ、って意図がハッキリしませんか？もし`Function`を使わなかったら、間違えて任意型と関係のない文字列を指定してしまう、なんて懸念はありませんか？
-…まぁ、この点はまた改めて考えます。
+基本的には第二引数に`String`型を指定すれば、それがそのままチェック横の文字列となるので、通常はそれで良いでしょう。`toString()`の返却値をそのままチェック横の文字列にしたくないケースを考慮し、このような仕組みを設けました。
 
 それでは、実際にチェック・ボックスを呼び出すフロント部分を見てみましょう。こちらは既に先ほど例で示したんですけど、`CheckBox`クラスです。
 
@@ -123,7 +122,240 @@ public class RadioButtonGroupWT<T> extends JPanel implements Widget<RadioButtonG
 
 まず、`RadioButtonGroupWT`を`JPanel`の子クラスとすることで、コンポーネントとして扱えるようにします。あとは、グループ配下の選択値を提供する`UIValue<T>`型の`selected`と、配下にするラジオ・ボタン`RadioButtonWT`をリスト化した`List<RadioButtonWT<T>>`をコンストラクタの引数としています。
 
-このリスト化したラジオ・ボタンをfor文でグルグル回して、`ButtonGroup`に追加していきます。これでグルーピングはＯＫです。また、その中に選択値と合致するラジオ・ボタンが保持する任意データがあれば、選択中のラジオ・ボタンとして設定します。
+このリスト化したラジオ・ボタンをfor文でグルグル回して、`ButtonGroup`に追加していきます。これでグルーピングはＯＫです。また、その中に選択値と合致する任意データ（ラジオ・ボタンが保持）があれば、選択中のラジオ・ボタンとして設定します（`RadioButtonWT#setSelected(boolean)`）。
+
+そうそう、`Swing`のラジオ・ボタンである`JRadioButton`の拡張クラス、そして`SwingUI`用のラジオ・ボタンである`RadioButtonWT`を忘れていました。
+
+https://github.com/spacehijackle/SwingUI_07/blob/main/app/src/main/java/com/swingui/widget/choice/RadioButtonWT.java
+
+基本的に先ほど開設した`CheckBoxWT`とほぼ同じで、異なる点と言えば`CheckBoxWT`は選択用の変数を保持していましたが、ラジオ・ボタンの場合、この選択状態は`RadioButtonGroup`が管理しているため、`RadioButtonWT`には選択用の変数を持たせていません。これはラジオ・ボタンをチェック・ボタンのように複数選択可の扱いにすることがなければ、問題はないはずです（そんなこと、しないでしょ？）。
+
+
+## まだまだ続く、ラジオ・ボタンの厄介
+
+それではラジオ・ボタンとそのグルーピングのフロント、つまり宣言的UI的に呼び出す対象のクラスを見ていきましょう。まず`RadioButtonGroupWT`のフロント、`RadioButtonGroup`です。先ほどの解説を思い出してもらうと、`RadioButtonGroupWT`は選択中を表す変数と、個々のラジオ・ボタンである`RadioButtonWT`のリストをコンストラクタの引数で受け取っていました。ではフロントもそれと同じにするか？と言えば、それはＮＯです。
+
+もし、下記のようにラジオ・ボタンを使った際、縦にラジオ・ボタンを並べるというパターンしか考慮しなくても良いのならば、それでも良いでしょう。
+
+![](/images/articles/df9c9b8cf8fbdb/radio_sample01.jpg)
+
+しかし、実際にはラジオ・ボタンを横に並べたい時もあるでしょう。また、ラジオ・ボタンの間に他のコンポーネントを挟み込みたいこともあるでしょう。つまり、フロントである`RadioButtonGroup`は、どのようにラジオ・ボタンを配置されるか？については呼び出し元に委ねるしかありません。だって、どのように配置したいのか分からないのですから。。。
+
+と、言うことで、`RadioButtonGroup`はリスト化したラジオ・ボタンを直接引き受けるのではなく、ラジオ・ボタンを含むコンポーネントのコンテナ、つまり`VStack`や`HStack`でコンポーネントをまとめたコンテナを受け取り、それを`RadioButtonGroupWT`の上に乗せ、またコンテナ中に存在するラジオ・ボタンを検索し、それを`RadioButtonGroupWT`のコンストラクタ引数として渡すのです。実際にソースを見てみると…
+
+```Java:RadioButtonGroup.java
+public class RadioButtonGroup
+{
+    public static <E, T extends JComponent> RadioButtonGroupWT<E> of(UIValue<E> selected, Widget<T> container)
+    {
+        // 指定コンテナ上のラジオ・ボタンを検索
+        RadioButtonFinder<E> finder = new RadioButtonFinder<>();
+        finder.find((JComponent)container);
+
+        // 抽出したラジオ・ボタンをグループ化し、指定されたコンポーネントを乗せる
+        RadioButtonGroupWT<E> panel = new RadioButtonGroupWT<>(selected, finder.radios);
+        panel.add((JComponent)container);
+
+        return panel;
+    }
+}
+```
+
+第二引数は`Widget<T>`になっていますが、これは`VStack`や`HStack`を想定しています。まず、このコンテナ上のラジオ・ボタンを検索し、結果を`RadioButtonGroupWT`の引数に渡しています。加えて、`RadioButtonGroupWT`上に指定されたコンテナを乗せています（`RadioButtonGroupWT`は`Swing`のコンテナである`JPanel`を継承したクラス）。これにより、ラジオ・ボタンをグルーピングできる上に、柔軟な配置も可能になります。
+
+そう、そう。`RadioButtonWT`のフロントである`RadioButton`は、ただ`RadioButtonWT`を呼び出すだけの存在です。
+
+
+## 機は熟した。後は実行あるのみ！
+
+まずは、単純なチェック・ボックスとラジオ・ボタンのサンプル・プログラムを見ていきましょう。
+
+![](/images/articles/df9c9b8cf8fbdb/survey01.jpg)
+
+以下、チェック・ボックス部分を抽出してみました。
+
+```Java:Survey.java
+public class Survey
+{
+    //
+    // 趣味の選択値（チェック・ボックス）
+    //
+    private final UIValue<Boolean> isPassbookGazingChecked = new UIValue<>(false);
+    private final UIValue<Boolean> isNappingChecked = new UIValue<>(false);
+    private final UIValue<Boolean> isZoningOutChecked = new UIValue<>(false);
+    private final UIValue<Boolean> isPeopleWatchingChecked = new UIValue<>(false);
+    private final UIValue<Boolean> isOtherChecked = new UIValue<>(false);
+
+    //
+    // 趣味の選択肢の活性/非活性状態（チェック・ボックス）
+    //
+    private final UIValue<Boolean> isPassbookGazingEnabled = new UIValue<>(true);
+    private final UIValue<Boolean> isNappingEnabled = new UIValue<>(true);
+    private final UIValue<Boolean> isZoningOutEnabled = new UIValue<>(true);
+    private final UIValue<Boolean> isPeopleWatchingEnabled = new UIValue<>(true);
+
+    void build()
+    {
+        Frame.of
+        (
+            "アンケート",
+
+            VStack.of
+            (
+                UIAlignmentX.Leading,
+
+                Text.of("趣味を選択してください（複数回答可）"),
+
+                VStack.of
+                (
+                    UIAlignmentX.Leading,
+
+                    CheckBox.of(isPassbookGazingChecked, "通帳を眺める")
+                        .enabled(isPassbookGazingEnabled),
+                    CheckBox.of(isNappingChecked, "ひたすら寝る")
+                        .enabled(isNappingEnabled),
+                    CheckBox.of(isZoningOutChecked, "ボーっとする")
+                        .enabled(isZoningOutEnabled),
+                    CheckBox.of(isPeopleWatchingChecked, "人間観察")
+                        .enabled(isPeopleWatchingEnabled),
+                    CheckBox.of(isOtherChecked, "その他")
+                        .onCheckChanged(isChecked -> syncHobbyWhenOthersChanged(isChecked))
+                )
+                .padding(Left.of(8))
+            )
+        )
+    }
+}
+```
+
+チェック・ボックスである`CheckBox`を`VStack`で縦に並べています。`CheckBox.of()`の第一引数は、`UIValue<boolean>`であり、これが選択状態か否か、を表す変数です。初期状態では全てが`false`なため、全て未選択状態です。もしデフォルトで選択したい項目がある場合は、その項目に対応する変数に対し`true`を設定しておきます。
+
+第二引数は任意型データですが、ここでは`String`型を指定しています。先ほど解説したのですが、この任意データ型の`toString()`がチェック・ボックス横の文字列になるのでしたよね。`String`型だと、指定した文字列がそのままチェック・ボックス横の文字列になっているように思えますが、実際はちょっと違う、ということです。
+
+この中で“その他”について、`onCheckChanged`により、チェックのON/OFFのイベントを拾えるようにしています。これは“その他”を選択した場合、他の選択肢は非活性とするためのトリガーとなります。実際に呼ばれた場合、以下のメソッドが呼び出されます。
+
+```Java:Survey.java
+    private void syncHobbyWhenOthersChanged(boolean isChecked)
+    {
+        if(isChecked)
+        {
+            // 「その他」が選択された場合、他の選択肢を全てオフにし、選択できないようにする
+            isPassbookGazingChecked.set(false);
+            isNappingChecked.set(false);
+            isZoningOutChecked.set(false);
+            isPeopleWatchingChecked.set(false);
+
+            isPassbookGazingEnabled.set(false);
+            isNappingEnabled.set(false);
+            isZoningOutEnabled.set(false);
+            isPeopleWatchingEnabled.set(false);
+        }
+        else
+        {
+            // 「その他」の選択が外された場合、他の選択肢を選択できるようにする
+            isPassbookGazingEnabled.set(true);
+            isNappingEnabled.set(true);
+            isZoningOutEnabled.set(true);
+            isPeopleWatchingEnabled.set(true);
+        }
+    }
+```
+
+実際にいくつかの項目が選択されている状態で、“その他”を選択した時、以下のようにそれまでの選択状態が解除され、加えて“その他”以外の項目が非活性になります。
+
+![](/images/articles/df9c9b8cf8fbdb/survey02.jpg)
+![](/images/articles/df9c9b8cf8fbdb/survey03.jpg)
+
+次にラジオ・ボタンです。今度はラジオ・ボタン周りのソースを抽出してみます。
+
+```Java:Survey.java
+public class Survey
+{
+    // 年齢の選択値（ラジオボタン）
+    private final UIValue<String> selectedAge = UIValue.of(null);
+
+    void build()
+    {
+        Frame.of
+        (
+            "アンケート",
+
+            VStack.of
+            (
+                UIAlignmentX.Leading,
+
+                Text.of("年齢を選択してください（単一回答）"),
+
+                VStack.of
+                (
+                    UIAlignmentX.Leading,
+
+                    RadioButtonGroup.of
+                    (
+                        selectedAge,
+                        VStack.of
+                        (
+                            UIAlignmentX.Leading,
+
+                            RadioButton.of("お子ちゃま"),
+                            RadioButton.of("20代"),
+                            RadioButton.of("30代"),
+                            RadioButton.of("40代"),
+                            RadioButton.of("50代"),
+                            RadioButton.of("60代以上")
+                        )
+                    )
+                )
+                .padding(Left.of(8)),
+
+                Spacer.of(Height.of(8)),
+
+                Button.of("送 信")
+                    .frame(Width.Infinite, Height.of(32))
+                    .onClicked(self ->
+                    {
+                        checkBeforeSubmit();
+                        JOptionPane.showMessageDialog(self.getRootPane(), "送信完了");
+                    })
+            )
+            .padding(24)
+            .frame(Width.of(300))
+        );
+    }
+}
+```
+
+チェック・ボックスの時と違うのは、やはり単一選択のためのグルーピングである`RadioButtonGroup`があることですね。第一引数には選択データを表す変数を指定し、第二引数でラジオ・ボタンを含むコンテナ（ここでは`VStack`）を指定しています。
+
+ちなみに第一引数である`UIValue<String>`は、初期状態で`null`を設定しているため、全ての項目が未選択状態ですね。
+
+最後に“送信ボタン”を押すと、送信前のチェック処理が走ります。
+
+```Java:Survey.java
+    private void checkBeforeSubmit()
+    {
+        // 趣味の選択がない場合、適当に選択
+        if(!isPassbookGazingChecked.get() && !isNappingChecked.get()
+        && !isZoningOutChecked.get() && !isPeopleWatchingChecked.get() && !isOtherChecked.get())
+        {
+            isNappingChecked.set(true);
+        }
+
+        // 年齢の選択がない場合、適当に選択
+        if(selectedAge.get() == null)
+        {
+            selectedAge.set("60代以上");
+        }
+    }
+```
+
+中身はかなり乱暴な処理ですが、ロジック側から選択値を設定できることの確認がしたかっただけ、なんです💦
+
+![](/images/articles/df9c9b8cf8fbdb/survey04.jpg)
 
 
 ## さいごに
+
+さて、今回はアンケート等で欠かせないチェック・ボックスとラジオ・ボタンについて解説しました。実はまだサンプル・プログラムがあって、このまま続けるつもりでしたが、急に書き続けるのが辛くなって次回に持ち越すことにしました🥲 生成AIもイイですが、早く若返りのクスリが実用化されて欲しいです（　＾ω＾）・・・
+
+今回のソース一式は[こちら](https://github.com/spacehijackle/SwingUI_07/tree/main)
