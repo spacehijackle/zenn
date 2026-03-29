@@ -404,3 +404,7 @@ https://github.com/spacehijackle/SwingUI_06/blob/main/app/src/main/java/swingui_
 もし、今後言語レベルで名前付き引数、デフォルト引数がサポートされたとしても、古いバージョンでコンパイルされたJARライブラリを利用した場合、そのライブラリ（クラスファイル）では引数名の情報は削除されているから、そのライブラリのメソッドは引数名を指定して呼び出すことはできないハズです。そういう事情もあってサポートされない気もしています。まぁ実際のところ、何が障害になっているのか分かりませんが（　＾ω＾）・・・
 
 今回のソース一式は[こちら](https://github.com/spacehijackle/SwingUI_06/tree/main)
+
+
+## 次回記事
+https://zenn.dev/spacehijackle/articles/df9c9b8cf8fbdb
