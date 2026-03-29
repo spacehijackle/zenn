@@ -3,7 +3,7 @@ title: "Swing 宣言的UI化計画⑦ ～アンケートに欠かせないアレ
 emoji: "🚀️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [ "Java", "Swing", "GUI", "宣言的UI", "実験" ]
-published: false
+published: true
 ---
 
 ## 人生とは… 詰まるところ選択なのだ！
@@ -11,6 +11,10 @@ published: false
 私はもう人生の後半真っ只中なので、これから大きな選択はあまりない気もするのですが、だがしかし！今後の人生においても何らかの選択の機会は何度も訪れるはずです。そう、人生は選択の連続なのだ！と、少し熱く語ったところで、今回のテーマは **“選択”** です。
 
 `GUI`としての選択と言えば、チェック・ボックス、ラジオ・ボタン、リストですかね。今回はアンケートに欠かせないこれら選択の部品の内、チェック・ボックスとラジオ・ボタンを宣言的UI化してみます。
+
+例えば、↓こんな感じ。
+
+![](/images/articles/df9c9b8cf8fbdb/gender01.jpg)
 
 まず、チェック・ボックスですが、これはこれまで解説してきた`SwingUI`の仕組みを知っていれば難しくはありません。`JCheckBox`を拡張した`Widget`インターフェース実装の`CheckBoxWT`を作成し、その`CheckBoxWT`を呼び出す`CheckBox`を作成すれば良いのです。
 
@@ -35,12 +39,12 @@ public class CheckBoxWT<T> extends JCheckBox implements Widget<CheckBoxWT<T>>
 
     public CheckBoxWT(UIValue<Boolean> isChecked, UIValue<T> item)
     {
-        this(isChecked, item, (t) -> t != null ? t.toString() : "");
+        this(isChecked, item, (t) -> t.toString());
     }
 
     public CheckBoxWT(UIValue<Boolean> isChecked, UIValue<T> item, Function<T, String> labeling)
     {
-        super(item != null ? labeling.apply(item.get()) : "", isChecked.get());
+        super(labeling.apply(item.get()), isChecked.get());
 
         this.isChecked = isChecked;
         this.isChecked.addValueChangeListener(valChgListener);
@@ -53,7 +57,7 @@ public class CheckBoxWT<T> extends JCheckBox implements Widget<CheckBoxWT<T>>
 }
 ```
 
-２つ目のコンストラクタを見てください。第一引数は`UIValue<Boolean>`であり、これはチェックON/OFF状態を表す変数です。`UIValue`を介しているため、例えばロジック側でこの変数に対し、true/falseを設定することで、それに同期してチェック・ボックスの選択状態も変化します（`addValueChangeListener()`に設定された処理により、再描画処理が実行）。これは後ほどサンプル・プログラムで確認します。
+２つ目のコンストラクタを見てください。第一引数は`UIValue<Boolean>`であり、これはチェックON/OFF状態を表す変数です。`UIValue`を介しているため、例えばロジック側でこの変数に対し、true/falseを設定することで、それに同期してチェック・ボックスの選択状態も変化します（`addValueChangeListener()`に設定された処理により、ON/OFF状態が反映）。これは後ほどサンプル・プログラムで確認します。
 
 第二引数は`UIValue<T>`であり、チェック・ボックスに紐づける任意の値が当てはまります。例えば、ギターの種類に関するチェック・ボックスの場合、ギターの種類を表すオブジェクトが該当します。基本的には固定値でしょうが、これを動的に変化させる可能性も考慮し、`UIValue`を介すことにしました。こちらも後ほどサンプル・プログラムで確認します。
 
@@ -69,7 +73,7 @@ public class CheckBoxWT<T> extends JCheckBox implements Widget<CheckBoxWT<T>>
 
 基本的には第二引数に`String`型を指定すれば、それがそのままチェック横の文字列となるので、通常はそれで良いでしょう。`toString()`の返却値をそのままチェック横の文字列にしたくないケースを考慮し、このような仕組みを設けました。
 
-それでは、実際にチェック・ボックスを呼び出すフロント部分を見てみましょう。こちらは既に先ほど例で示したんですけど、`CheckBox`クラスです。
+それでは、今度はチェック・ボックスを呼び出すフロント部分を見てみましょう。こちらは既に先ほどしれっと例で示してたんですけど、`CheckBox`クラスです。
 
 https://github.com/spacehijackle/SwingUI_07/blob/main/app/src/main/java/com/swingui/front/choice/CheckBox.java
 
@@ -78,11 +82,11 @@ https://github.com/spacehijackle/SwingUI_07/blob/main/app/src/main/java/com/swin
 
 ## 一方、ラジオ・ボタンは厄介なのだ🥲
 
-ラジオ・ボタンは単一選択なので、何も知らない人からすると、複数選択可能なチェック・ボックスより簡単なんじゃ？と思う人がいるかもしれません。ギターで例えると、メロディを弾くよりコードで弾く方が難しいと思う人がいるように（ちなみに、そう思う理由は、一度に複数の指を使って弦を押さえるためだそう）。
+ラジオ・ボタンは単一選択なので、GUIプログラミングを知らない人からすると、複数選択可能なチェック・ボックスより簡単なんじゃ？と思う人がいるかもしれません。ギターで例えると、メロディを弾くよりコードで弾く方が難しいと思う人がいるように（ちなみに、そう思う理由は、一度に複数の指を使って弦を押さえるためだそう）。
 
-ラジオ・ボタンの厄介なところは、単一選択のためにグルーピングが必要ということです。`Swing`においても`ButtonGroup`クラスを使って、対象となるラジオ・ボタンを`ButtonGroup`に追加することで、単一選択が可能になっています。つまり、単一選択なので、選択中とは別のボタンがクリックされたら、それまで選択されてたボタンが非選択となり、新たにクリックされたボタンが選択される、というグルーピングの仕組みが必要であり、その動作を`ButtonGroup`がやってくれてるんですね。
+ラジオ・ボタンの厄介なところは、単一選択のためにグルーピングが必要ということです。`Swing`においても`ButtonGroup`クラスを使って、対象となるラジオ・ボタンを`ButtonGroup`に追加することで、単一選択が可能になっています。簡単に説明すると、単一選択なので、選択中とは別のボタンがクリックされたら、それまで選択されてたボタンが非選択となり、新たにクリックされたボタンが選択される、というグルーピングの仕組みが必要であり、その動作を`ButtonGroup`がやってくれてるんですね。
 
-もちろん`SwingUI`でも`ButtonGroup`を利用する訳ですが、問題は`ButtonGroup`はコンポーネントではない、ということなんですね。宣言的UIではコンポーネントを次々と重ねていく仕組みですから、非コンポーネントである`ButtonGroup`を直接扱うことはできないのです。なので、`SwingUI`では`ButtonGroup`の機能を持つクラスをコンポーネント（あるいはウィジェット）として作成します。
+もちろん`SwingUI`でも`ButtonGroup`を利用する訳ですが、問題は`ButtonGroup`はコンポーネントではない、ということなんですね。宣言的UIではコンポーネントを次々と重ねていく仕組みですから、非コンポーネントである`ButtonGroup`を直接宣言的UIの中で扱うことはできないのです。なので、`SwingUI`では`ButtonGroup`の機能を持つクラスをコンポーネント（`SwingUI`としてはウィジェット）として作成します。
 
 https://github.com/spacehijackle/SwingUI_07/blob/main/app/src/main/java/com/swingui/widget/choice/RadioButtonGroupWT.java
 
@@ -120,28 +124,28 @@ public class RadioButtonGroupWT<T> extends JPanel implements Widget<RadioButtonG
 }
 ```
 
-まず、`RadioButtonGroupWT`を`JPanel`の子クラスとすることで、コンポーネントとして扱えるようにします。あとは、グループ配下の選択値を提供する`UIValue<T>`型の`selected`と、配下にするラジオ・ボタン`RadioButtonWT`をリスト化した`List<RadioButtonWT<T>>`をコンストラクタの引数としています。
+まず、`RadioButtonGroupWT`を`JPanel`の子クラスとすることで、コンポーネントとして扱えるようにします。あとは、グループ配下の選択値を提供する`UIValue<T>`型の`selected`と、グルーピング配下にするラジオ・ボタン`RadioButtonWT`をリスト化した`List<RadioButtonWT<T>>`をコンストラクタの引数としています。
 
-このリスト化したラジオ・ボタンをfor文でグルグル回して、`ButtonGroup`に追加していきます。これでグルーピングはＯＫです。また、その中に選択値と合致する任意データ（ラジオ・ボタンが保持）があれば、選択中のラジオ・ボタンとして設定します（`RadioButtonWT#setSelected(boolean)`）。
+このリスト化したラジオ・ボタンをfor文でグルグル回して、`ButtonGroup`に追加していきます。これでグルーピングはＯＫです。また、その中に選択値と合致する任意データ（ラジオ・ボタンが保持している任意データ）があれば、選択中のラジオ・ボタンとして設定します（`RadioButtonWT#setSelected(boolean)`）。
 
-そうそう、`Swing`のラジオ・ボタンである`JRadioButton`の拡張クラス、そして`SwingUI`用のラジオ・ボタンである`RadioButtonWT`を忘れていました。
+そうそう、`Swing`のラジオ・ボタンである`JRadioButton`の拡張クラス（`SwingUI`用のラジオ・ボタンでもある）`RadioButtonWT`を忘れていました。
 
 https://github.com/spacehijackle/SwingUI_07/blob/main/app/src/main/java/com/swingui/widget/choice/RadioButtonWT.java
 
-基本的に先ほど開設した`CheckBoxWT`とほぼ同じで、異なる点と言えば`CheckBoxWT`は選択用の変数を保持していましたが、ラジオ・ボタンの場合、この選択状態は`RadioButtonGroup`が管理しているため、`RadioButtonWT`には選択用の変数を持たせていません。これはラジオ・ボタンをチェック・ボタンのように複数選択可の扱いにすることがなければ、問題はないはずです（そんなこと、しないでしょ？）。
+基本的に先ほど開設した`CheckBoxWT`とほぼ同じで、異なる点と言えば`CheckBoxWT`は選択用の変数を保持していましたが、ラジオ・ボタンの場合、選択状態は`RadioButtonGroup`が管理しているため、`RadioButtonWT`には選択用の変数を持たせていません。これはラジオ・ボタンをチェック・ボタンのように複数選択可の扱いにすることがなければ、問題はないはずです（そんなこと、しないでしょ？）。
 
 
 ## まだまだ続く、ラジオ・ボタンの厄介
 
-それではラジオ・ボタンとそのグルーピングのフロント、つまり宣言的UI的に呼び出す対象のクラスを見ていきましょう。まず`RadioButtonGroupWT`のフロント、`RadioButtonGroup`です。先ほどの解説を思い出してもらうと、`RadioButtonGroupWT`は選択中を表す変数と、個々のラジオ・ボタンである`RadioButtonWT`のリストをコンストラクタの引数で受け取っていました。ではフロントもそれと同じにするか？と言えば、それはＮＯです。
+それではラジオ・ボタンとそのグルーピングのフロント、つまり宣言的UIとして呼び出す対象のクラスを見ていきましょう。まず`RadioButtonGroupWT`のフロント、`RadioButtonGroup`です。先ほどの解説を思い出してもらうと、`RadioButtonGroupWT`は選択中を表す変数と、グルーピング配下のラジオ・ボタン`RadioButtonWT`のリストをコンストラクタの引数で受け取っていました。ではフロントもそれと同じ引数にするか？と言えば、それはＮＯです。
 
-もし、下記のようにラジオ・ボタンを使った際、縦にラジオ・ボタンを並べるというパターンしか考慮しなくても良いのならば、それでも良いでしょう。
+もし、下記のようにラジオ・ボタンを利用する際、縦にラジオ・ボタンを並べるというパターンしか考慮しなくても良いのならば、それでも良いでしょう。
 
 ![](/images/articles/df9c9b8cf8fbdb/radio_sample01.jpg)
 
-しかし、実際にはラジオ・ボタンを横に並べたい時もあるでしょう。また、ラジオ・ボタンの間に他のコンポーネントを挟み込みたいこともあるでしょう。つまり、フロントである`RadioButtonGroup`は、どのようにラジオ・ボタンを配置されるか？については呼び出し元に委ねるしかありません。だって、どのように配置したいのか分からないのですから。。。
+しかし、実際にはラジオ・ボタンを横に並べたい時もあるでしょう。もしくは、ラジオ・ボタンの間に他のコンポーネントを挟み込みたいこともあるでしょう。つまり、フロントである`RadioButtonGroup`は、どのようにラジオ・ボタンが配置されるか？については呼び出し元に委ねるしかありません。だって、どのように配置したいのか分からないのですから。。。
 
-と、言うことで、`RadioButtonGroup`はリスト化したラジオ・ボタンを直接引き受けるのではなく、ラジオ・ボタンを含むコンポーネントのコンテナ、つまり`VStack`や`HStack`でコンポーネントをまとめたコンテナを受け取り、それを`RadioButtonGroupWT`の上に乗せ、またコンテナ中に存在するラジオ・ボタンを検索し、それを`RadioButtonGroupWT`のコンストラクタ引数として渡すのです。実際にソースを見てみると…
+と、言うことで、`RadioButtonGroup`はリスト化したラジオ・ボタンを直接引き受けるのではなく、ラジオ・ボタンを含むコンポーネントのコンテナ、つまり`VStack`や`HStack`でコンポーネントをまとめたコンテナを受け取り、それを`RadioButtonGroupWT`の上に乗せ、加えてコンテナ中に存在するラジオ・ボタンを検索し、それをリスト化の上、`RadioButtonGroupWT`のコンストラクタ引数として渡すのです。実際にソースを見てみると…
 
 ```Java:RadioButtonGroup.java
 public class RadioButtonGroup
@@ -161,9 +165,11 @@ public class RadioButtonGroup
 }
 ```
 
-第二引数は`Widget<T>`になっていますが、これは`VStack`や`HStack`を想定しています。まず、このコンテナ上のラジオ・ボタンを検索し、結果を`RadioButtonGroupWT`の引数に渡しています。加えて、`RadioButtonGroupWT`上に指定されたコンテナを乗せています（`RadioButtonGroupWT`は`Swing`のコンテナである`JPanel`を継承したクラス）。これにより、ラジオ・ボタンをグルーピングできる上に、柔軟な配置も可能になります。
+第二引数は`Widget<T>`になっていますが、これは`VStack`や`HStack`を想定しています。まず、このコンテナ上のラジオ・ボタンを検索し、結果を`RadioButtonGroupWT`の引数に渡しています。その後、`RadioButtonGroupWT`上に指定されたコンテナを乗せています（`RadioButtonGroupWT`は`Swing`のコンテナである`JPanel`を継承したクラス）。これにより、ラジオ・ボタンをグルーピングできる上に、柔軟な配置も可能になります。
 
-そう、そう。`RadioButtonWT`のフロントである`RadioButton`は、ただ`RadioButtonWT`を呼び出すだけの存在です。
+そう、そう。`RadioButtonWT`のフロントである`RadioButton`は、ただ`RadioButtonWT`を呼び出すだけです。
+
+https://github.com/spacehijackle/SwingUI_07/blob/main/app/src/main/java/com/swingui/front/choice/RadioButton.java
 
 
 ## 機は熟した。後は実行あるのみ！
@@ -230,7 +236,7 @@ public class Survey
 
 チェック・ボックスである`CheckBox`を`VStack`で縦に並べています。`CheckBox.of()`の第一引数は、`UIValue<boolean>`であり、これが選択状態か否か、を表す変数です。初期状態では全てが`false`なため、全て未選択状態です。もしデフォルトで選択したい項目がある場合は、その項目に対応する変数に対し`true`を設定しておきます。
 
-第二引数は任意型データですが、ここでは`String`型を指定しています。先ほど解説したのですが、この任意データ型の`toString()`がチェック・ボックス横の文字列になるのでしたよね。`String`型だと、指定した文字列がそのままチェック・ボックス横の文字列になっているように思えますが、実際はちょっと違う、ということです。
+第二引数は任意型データですが、ここでは`String`型を指定しています。先ほど解説したのですが、この任意データ型の`toString()`がチェック・ボックス横の文字列になるのでしたよね。`String`型だと、指定した文字列がそのままチェック・ボックス横の文字列になっているように思えますが、実際はちょっと違う（`toString()`の返却値が設定）、ということです。結果的には同じですが（　＾ω＾）・・・
 
 この中で“その他”について、`onCheckChanged`により、チェックのON/OFFのイベントを拾えるようにしています。これは“その他”を選択した場合、他の選択肢は非活性とするためのトリガーとなります。実際に呼ばれた場合、以下のメソッドが呼び出されます。
 
