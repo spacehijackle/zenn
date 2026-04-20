@@ -365,3 +365,7 @@ public class Survey
 さて、今回はアンケート等で欠かせないチェック・ボックスとラジオ・ボタンについて解説しました。実はまだサンプル・プログラムがあって、このまま続けるつもりでしたが、急に書き続けるのが辛くなって次回に持ち越すことにしました🥲 生成AIもイイですが、早く若返りのクスリが実用化されて欲しいです（　＾ω＾）・・・
 
 今回のソース一式は[こちら](https://github.com/spacehijackle/SwingUI_07/tree/main)
+
+
+## 次回記事
+https://zenn.dev/spacehijackle/articles/ed4353c15520ab
